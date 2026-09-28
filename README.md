@@ -4,6 +4,8 @@ Eine einzelne, Offline-fähige Webseite zum Üben für den Einbürgerungstest.
 
 **Öffnen:** `index.html` doppelklicken. Kein Webserver, kein Build, keine Installation.
 
+**Online:** https://youssefeghaly.github.io/einbuergerungstest/
+
 ## Was die Seite macht
 
 - **33 Fragen pro Durchlauf**: 30 allgemeine Fragen aus dem amtlichen Katalog von
