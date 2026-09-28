@@ -1,0 +1,8 @@
+# Nur die Dateien ausliefern, die die Seite im Browser braucht.
+# Das amtliche PDF (9 MB) und die Python-Werkzeuge bleiben im Repository,
+# gehören aber nicht in die Bereitstellung.
+data/raw
+data/source
+data/catalog_pdf.json
+tools
+.DS_Store

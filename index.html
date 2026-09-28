@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Einbürgerungstest – Übung</title>
+<style>
+  :root {
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --ink: #1b1f24;
+    --muted: #5c6672;
+    --line: #dfe3e8;
+    --accent: #1b4f9c;
+    --accent-soft: #e8effa;
+    --ok: #1a7f45;
+    --ok-soft: #e6f4ec;
+    --bad: #b3261e;
+    --bad-soft: #fdecea;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+  }
+  main { max-width: 760px; margin: 0 auto; padding: 20px 16px 64px; }
+  h1 { font-size: 1.5rem; line-height: 1.25; margin: 0 0 6px; }
+  h2 { font-size: 1.1rem; margin: 0 0 12px; }
+  p { margin: 0 0 12px; }
+  .muted { color: var(--muted); }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  button {
+    font: inherit;
+    cursor: pointer;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    color: var(--ink);
+    padding: 11px 16px;
+    transition: background .12s, border-color .12s;
+  }
+  button:hover:not(:disabled) { border-color: #b9c2cc; }
+  button:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 1px; }
+  button:disabled { cursor: default; }
+  .primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    font-weight: 600;
+  }
+  .primary:hover:not(:disabled) { background: #16417f; border-color: #16417f; }
+  select {
+    font: inherit;
+    padding: 11px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: #fff;
+    min-width: 240px;
+  }
+  label { font-weight: 600; display: block; margin-bottom: 6px; }
+
+  .bar { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; margin: 10px 0 18px; }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 99px; transition: width .18s; }
+
+  .qmeta { font-size: .82rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
+  .repeat-hint {
+    background: #fff6e5;
+    border: 1px solid #f0d9a8;
+    color: #7a5a12;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: .88rem;
+    font-weight: 600;
+    margin: 0 0 12px;
+  }
+  .qtext { font-size: 1.18rem; font-weight: 600; line-height: 1.4; margin-bottom: 16px; }
+  .qimg { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 10px; margin: 4px 0 16px; display: block; }
+
+  .opts { display: grid; gap: 10px; }
+  .opt {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    text-align: left;
+    width: 100%;
+    padding: 13px 15px;
+    line-height: 1.4;
+  }
+  .opt .key {
+    flex: 0 0 auto;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    display: grid; place-items: center;
+    font-size: .82rem; font-weight: 700; color: var(--muted);
+  }
+  .opt.state-ok { background: var(--ok-soft); border-color: var(--ok); }
+  .opt.state-ok .key { background: var(--ok); border-color: var(--ok); color: #fff; }
+  .opt.state-bad { background: var(--bad-soft); border-color: var(--bad); }
+  .opt.state-bad .key { background: var(--bad); border-color: var(--bad); color: #fff; }
+  .opt[disabled] { opacity: 1; }
+
+  .verdict { margin-top: 16px; padding: 12px 14px; border-radius: 10px; font-weight: 600; }
+  .verdict.ok { background: var(--ok-soft); color: var(--ok); }
+  .verdict.bad { background: var(--bad-soft); color: var(--bad); }
+  .verdict span { display: block; font-weight: 400; color: var(--ink); margin-top: 4px; }
+
+  .score { font-size: 2.6rem; font-weight: 700; line-height: 1; margin: 4px 0 10px; }
+  .score.ok { color: var(--ok); }
+  .score.bad { color: var(--bad); }
+
+  .review { border: 1px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; background: #fff; }
+  .review .tag { font-size: .78rem; font-weight: 700; padding: 2px 8px; border-radius: 99px; display: inline-block; margin-bottom: 8px; }
+  .tag.ok { background: var(--ok-soft); color: var(--ok); }
+  .tag.bad { background: var(--bad-soft); color: var(--bad); }
+  .tag.open { background: #eef0f3; color: var(--muted); }
+  .review .q { font-weight: 600; margin-bottom: 8px; }
+  .review .ans { font-size: .92rem; margin: 2px 0; }
+  .review .ans b { font-weight: 600; }
+  .review img { max-width: 100%; border-radius: 8px; border: 1px solid var(--line); margin: 6px 0; }
+  .fnote { font-size: .85rem; color: var(--muted); margin-top: 18px; border-top: 1px solid var(--line); padding-top: 12px; }
+  @media (max-width: 480px) {
+    .card { padding: 16px; }
+    .qtext { font-size: 1.08rem; }
+    select { min-width: 0; width: 100%; }
+  }
+</style>
+</head>
+<body>
+<main id="app"></main>
+
+<!-- Datensatz: identisch zu data/questions.json, als Script ladbar,
+     damit die Seite auch per Doppelklick (file://) ohne Webserver funktioniert. -->
+<script src="data/questions.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var STATE_NAMES = {
+    BW: "Baden-Württemberg", BY: "Bayern", BE: "Berlin", BB: "Brandenburg",
+    HB: "Bremen", HH: "Hamburg", HE: "Hessen", MV: "Mecklenburg-Vorpommern",
+    NI: "Niedersachsen", NW: "Nordrhein-Westfalen", RP: "Rheinland-Pfalz",
+    SL: "Saarland", SN: "Sachsen", ST: "Sachsen-Anhalt",
+    SH: "Schleswig-Holstein", TH: "Thüringen"
+  };
+  var GENERAL_COUNT = 30;
+  var STATE_COUNT = 3;
+  var TOTAL = GENERAL_COUNT + STATE_COUNT;
+
+  var DATA = window.QUESTION_DATA;
+  var app = document.getElementById("app");
+
+  var view = {
+    phase: "start",     // start | quiz | result
+    stateCode: "HE",
+    test: [],
+    answers: [],
+    index: 0
+  };
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function shuffle(items) {
+    var a = items.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  function buildTest(stateCode) {
+    var all = DATA.questions;
+    var general = all.filter(function (q) { return q.part === "general"; });
+    var regional = all.filter(function (q) { return q.part === "state" && q.state === stateCode; });
+    var picked = pickWeighted(general, GENERAL_COUNT)
+      .concat(pickWeighted(regional, STATE_COUNT));
+    return shuffle(picked);
+  }
+
+  // ---------- Lernstand ----------
+  // Merkt sich je Frage: s = wie oft gesehen, w = wie oft falsch (mit
+  // Vergessen bei richtigen Antworten), c = Serie richtiger Antworten.
+  var STORE_KEY = "eit.progress.v1";
+  var store = {
+    available: true,
+    data: {},
+    load: function () {
+      try {
+        var raw = window.localStorage.getItem(STORE_KEY);
+        this.data = raw ? JSON.parse(raw) : {};
+        if (!this.data || typeof this.data !== "object") this.data = {};
+      } catch (e) {
+        this.available = false;
+        this.data = {};
+      }
+    },
+    save: function () {
+      try {
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(this.data));
+      } catch (e) {
+        this.available = false;
+      }
+    },
+    get: function (id) {
+      var st = this.data[id];
+      return st ? { s: st.s || 0, w: st.w || 0, c: st.c || 0 } : { s: 0, w: 0, c: 0 };
+    },
+    record: function (id, correct) {
+      var st = this.get(id);
+      st.s += 1;
+      if (correct) {
+        st.c += 1;
+        st.w = Math.max(0, st.w - 1); // richtig beantwortet -> verliert an Dringlichkeit
+      } else {
+        st.w += 1;
+        st.c = 0;
+      }
+      this.data[id] = st;
+      this.save();
+    },
+    reset: function () {
+      this.data = {};
+      try {
+        window.localStorage.removeItem(STORE_KEY);
+      } catch (e) {
+        /* nichts zu tun */
+      }
+    }
+  };
+
+  // Gewicht einer Frage: falsch beantwortete Fragen kommen häufiger, sicher
+  // beherrschte seltener, noch nie gesehene zuerst.
+  function weight(id) {
+    var st = store.get(id);
+    if (st.s === 0) return 3.0;
+    var w = (1 + 2 * st.w) / (1 + st.c);
+    return Math.min(8, Math.max(0.15, w));
+  }
+
+  // Gewichtete Ziehung ohne Zurücklegen (Efraimidis-Spirakis): jede Frage
+  // bekommt den Schlüssel random^(1/Gewicht), die grössten gewinnen.
+  function pickWeighted(items, count) {
+    var keyed = items.map(function (q) {
+      return { q: q, key: Math.pow(Math.random(), 1 / weight(q.id)) };
+    });
+    keyed.sort(function (a, b) { return b.key - a.key; });
+    return keyed.slice(0, count).map(function (entry) { return entry.q; });
+  }
+
+  function progressStats() {
+    var seen = 0, mastered = 0;
+    DATA.questions.forEach(function (q) {
+      var st = store.get(q.id);
+      if (st.s > 0) seen++;
+      if (st.c >= 2) mastered++;
+    });
+    return { seen: seen, mastered: mastered, total: DATA.questions.length };
+  }
+
+  function score() {
+    var n = 0;
+    for (var i = 0; i < view.test.length; i++) {
+      if (view.answers[i] === view.test[i].correct) n++;
+    }
+    return n;
+  }
+
+  function label(q) {
+    return q.part === "general"
+      ? "Allgemeine Frage " + q.number
+      : STATE_NAMES[q.state] + " · Frage " + q.number;
+  }
+
+  // ---------- views ----------
+
+  function startView() {
+    var options = Object.keys(STATE_NAMES).map(function (code) {
+      return '<option value="' + code + '"' + (code === view.stateCode ? " selected" : "") + ">" +
+        esc(STATE_NAMES[code]) + "</option>";
+    }).join("");
+
+    var stats = progressStats();
+    var storageNote = store.available
+      ? ""
+      : '<p class="muted" style="margin:12px 0 0;font-size:.88rem">Hinweis: Dieser Browser ' +
+        "erlaubt kein Speichern. Der Lernstand geht dann beim Schliessen der Seite verloren.</p>";
+
+    return '<div class="card">' +
+      "<h1>Einbürgerungstest – Übung</h1>" +
+      '<p class="muted">Übungstest mit 33 Fragen: ' + GENERAL_COUNT + " allgemeine Fragen und " +
+      STATE_COUNT + " Fragen zu deinem Bundesland.</p>" +
+      '<p class="muted">Nach jeder Antwort siehst du sofort, ob sie richtig war. Es läuft keine Uhr – ' +
+      "du kannst in Ruhe üben und am Ende alles noch einmal durchgehen.</p>" +
+      '<p class="muted"><strong>Der Test passt sich an:</strong> Fragen, die du falsch beantwortest, ' +
+      "kommen in den nächsten Durchläufen häufiger vor. Was du sicher beherrschst, wird seltener.</p>" +
+      "</div>" +
+      '<div class="card">' +
+      "<h2>Dein Lernstand</h2>" +
+      "<p>" + stats.seen + " von " + stats.total + " Fragen bearbeitet" +
+      (stats.mastered > 0 ? ", davon " + stats.mastered + " sicher beherrscht" : "") + ".</p>" +
+      (stats.seen > 0
+        ? '<div class="row"><button data-act="reset">Lernstand zurücksetzen</button></div>'
+        : "") +
+      storageNote +
+      "</div>" +
+      '<div class="card">' +
+      "<label for=\"state\">Bundesland</label>" +
+      '<div class="row"><select id="state">' + options + "</select>" +
+      '<button class="primary" data-act="start">Test starten</button></div>' +
+      '<p class="muted" style="margin:12px 0 0;font-size:.88rem">' +
+      "Der Test wird bei jedem Start neu zusammengestellt. Im echten Test gelten 17 von 33 richtigen " +
+      "Antworten als bestanden – hier ist das nur eine Information.</p>" +
+      "</div>";
+  }
+
+  function quizView() {
+    var q = view.test[view.index];
+    var chosen = view.answers[view.index];
+    var answered = chosen !== null;
+
+    var opts = q.options.map(function (text, i) {
+      var cls = "opt";
+      if (answered) {
+        if (i === q.correct) cls += " state-ok";
+        else if (i === chosen) cls += " state-bad";
+      }
+      return '<button class="' + cls + '" data-act="answer" data-i="' + i + '"' +
+        (answered ? " disabled" : "") + ">" +
+        '<span class="key">' + "ABCD"[i] + "</span><span>" + esc(text) + "</span></button>";
+    }).join("");
+
+    var verdict = "";
+    if (answered) {
+      var right = chosen === q.correct;
+      verdict = '<div class="verdict ' + (right ? "ok" : "bad") + '">' +
+        (right ? "Richtig." : "Leider falsch.") +
+        "<span>Richtige Antwort: " + esc(q.options[q.correct]) + "</span></div>";
+    }
+
+    var last = view.index === view.test.length - 1;
+    var nextLabel = !answered ? "Ohne Antwort weiter" : (last ? "Auswertung anzeigen" : "Weiter");
+
+    // War diese Frage schon einmal falsch? Dann sagt es die Seite vorher.
+    var before = store.get(q.id);
+    var hint = (!answered && before.w > 0)
+      ? '<p class="repeat-hint">Diese Frage hattest du zuvor falsch beantwortet.</p>'
+      : "";
+
+    return "<div>" +
+      '<div class="row" style="justify-content:space-between">' +
+      '<div class="qmeta">' + esc(label(q)) + "</div>" +
+      '<div class="qmeta">Frage ' + (view.index + 1) + " von " + view.test.length + "</div>" +
+      "</div>" +
+      '<div class="bar"><i style="width:' +
+        Math.round(((view.index + (answered ? 1 : 0)) / view.test.length) * 100) + '%"></i></div>' +
+      '<div class="card">' +
+      hint +
+      '<div class="qtext">' + esc(q.question) + "</div>" +
+      (q.image ? '<img class="qimg" src="' + esc(q.image) + '" alt="Abbildung zur Frage">' : "") +
+      '<div class="opts">' + opts + "</div>" +
+      verdict +
+      "</div>" +
+      '<div class="row" style="justify-content:space-between">' +
+      '<button data-act="back"' + (view.index === 0 ? " disabled" : "") + ">Zurück</button>" +
+      '<button class="primary" data-act="next">' + nextLabel + "</button>" +
+      "</div>" +
+      "</div>";
+  }
+
+  function resultView() {
+    var n = score();
+    var pct = Math.round((n / view.test.length) * 100);
+    var passed = n >= 17;
+
+    var review = view.test.map(function (q, i) {
+      var chosen = view.answers[i];
+      var state = chosen === null ? "open" : (chosen === q.correct ? "ok" : "bad");
+      var tag = state === "open" ? "nicht beantwortet" : (state === "ok" ? "richtig" : "falsch");
+      var lines = '<div class="ans"><b>Richtige Antwort:</b> ' + esc(q.options[q.correct]) + "</div>";
+      if (chosen !== null && chosen !== q.correct) {
+        lines = '<div class="ans"><b>Deine Antwort:</b> ' + esc(q.options[chosen]) + "</div>" + lines;
+      }
+      return '<div class="review">' +
+        '<span class="tag ' + state + '">' + tag + "</span>" +
+        '<div class="qmeta">' + esc(label(q)) + "</div>" +
+        '<div class="q">' + esc(q.question) + "</div>" +
+        (q.image ? '<img src="' + esc(q.image) + '" alt="Abbildung zur Frage">' : "") +
+        lines +
+        "</div>";
+    }).join("");
+
+    var stats = progressStats();
+    var wrongThisRound = view.test.filter(function (q, i) {
+      return view.answers[i] !== null && view.answers[i] !== q.correct;
+    }).length;
+
+    return "<div>" +
+      '<div class="card">' +
+      "<h1>Auswertung</h1>" +
+      '<div class="score ' + (passed ? "ok" : "bad") + '">' + n + " von " + view.test.length + "</div>" +
+      "<p>" + pct + " % richtig. " + (passed
+        ? "Das würde im echten Test zum Bestehen reichen (mindestens 17 richtige Antworten)."
+        : "Im echten Test brauchst du mindestens 17 richtige Antworten.") + "</p>" +
+      "<p>" + (wrongThisRound > 0
+        ? wrongThisRound + (wrongThisRound === 1 ? " Frage kommt" : " Fragen kommen") +
+          " jetzt häufiger, bis du " + (wrongThisRound === 1 ? "sie" : "sie") + " sicher kannst."
+        : "Keine falsche Antwort in diesem Durchlauf.") + "</p>" +
+      '<p class="muted">Lernstand: ' + stats.seen + " von " + stats.total + " Fragen bearbeitet" +
+      (stats.mastered > 0 ? ", " + stats.mastered + " sicher beherrscht" : "") + ".</p>" +
+      '<div class="row"><button class="primary" data-act="again">Neuer Test</button>' +
+      '<button data-act="home">Bundesland ändern</button></div>' +
+      "</div>" +
+      "<h2>Alle Fragen im Überblick</h2>" +
+      review +
+      '<p class="fnote">Fragen und Bilder stammen aus dem amtlichen Gesamtfragenkatalog des BAMF ' +
+      "(Stand " + esc(DATA.catalog_version) + "). Die Antwortschlüssel stammen aus einem externen, " +
+      "MIT-lizenzierten Datensatz; Einzelheiten stehen in der Verifikationsdatei des Projekts.</p>" +
+      "</div>";
+  }
+
+  function render() {
+    if (!DATA || !DATA.questions) {
+      app.innerHTML = '<div class="card"><h1>Fragen konnten nicht geladen werden</h1>' +
+        "<p>Die Datei <code>data/questions.js</code> fehlt oder ist beschädigt. " +
+        "Bitte <code>tools/build_dataset.py</code> erneut ausführen.</p></div>";
+      return;
+    }
+    app.innerHTML = view.phase === "start" ? startView()
+      : view.phase === "quiz" ? quizView()
+      : resultView();
+    window.scrollTo(0, 0);
+  }
+
+  // ---------- interaction ----------
+
+  app.addEventListener("click", function (event) {
+    var target = event.target.closest("[data-act]");
+    if (!target || target.disabled) return;
+    var act = target.getAttribute("data-act");
+
+    if (act === "start") {
+      var sel = document.getElementById("state");
+      view.stateCode = sel ? sel.value : "HE";
+      view.test = buildTest(view.stateCode);
+      view.answers = view.test.map(function () { return null; });
+      view.index = 0;
+      view.phase = "quiz";
+      render();
+    } else if (act === "answer") {
+      var i = parseInt(target.getAttribute("data-i"), 10);
+      if (view.answers[view.index] === null) {
+        view.answers[view.index] = i;
+        store.record(view.test[view.index].id, i === view.test[view.index].correct);
+        render();
+      }
+    } else if (act === "next") {
+      if (view.index === view.test.length - 1) view.phase = "result";
+      else view.index++;
+      render();
+    } else if (act === "back") {
+      if (view.index > 0) { view.index--; render(); }
+    } else if (act === "reset") {
+      if (window.confirm("Lernstand wirklich zurücksetzen? Alle gemerkten Antworten gehen verloren.")) {
+        store.reset();
+        render();
+      }
+    } else if (act === "again") {
+      view.test = buildTest(view.stateCode);
+      view.answers = view.test.map(function () { return null; });
+      view.index = 0;
+      view.phase = "quiz";
+      render();
+    } else if (act === "home") {
+      view.phase = "start";
+      render();
+    }
+  });
+
+  document.addEventListener("keydown", function (event) {
+    if (view.phase !== "quiz") return;
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    var k = event.key;
+    if (k >= "1" && k <= "4") {
+      var i = parseInt(k, 10) - 1;
+      if (view.answers[view.index] === null) {
+        view.answers[view.index] = i;
+        store.record(view.test[view.index].id, i === view.test[view.index].correct);
+        render();
+      }
+    } else if (k === "Enter" || k === "ArrowRight") {
+      if (view.index === view.test.length - 1) view.phase = "result"; else view.index++;
+      render();
+    } else if (k === "ArrowLeft") {
+      if (view.index > 0) { view.index--; render(); }
+    }
+  });
+
+  store.load();
+  render();
+
+  // Testzugang: erlaubt tools/test_app.js, die Auswahl direkt zu prüfen.
+  window.__EIT__ = {
+    buildTest: buildTest,
+    weight: weight,
+    store: store,
+    progressStats: progressStats,
+    render: render,
+    view: view
+  };
+})();
+</script>
+</body>
+</html>
