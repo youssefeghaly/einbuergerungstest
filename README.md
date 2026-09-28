@@ -100,6 +100,16 @@ Der Test spielt einen kompletten Durchlauf im DOM durch, zählt die Punktzahl
 unabhängig mit und prüft unter anderem, dass genau 3 Landesfragen gezogen
 werden, keine Frage doppelt vorkommt und die Rückmeldung zur Antwort passt.
 
+## Bereitstellung
+
+Das Vercel-Projekt `sandpitsolutions/einbuergerungstest` ist mit diesem
+GitHub-Repository verbunden. **Jeder Push auf `main` löst automatisch eine neue
+Bereitstellung aus** (Dauer bis zur Veröffentlichung: ein bis drei Minuten).
+Ein `vercel deploy --prod` von Hand ist nicht nötig.
+
+Ausgeliefert wird nur, was die Seite im Browser braucht; `data/raw` (das amtliche
+PDF), `data/source` und `tools/` bleiben über `.vercelignore` aussen vor.
+
 ## Grenzen
 
 Der amtliche Katalog enthält **keinen Lösungsschlüssel**. Die richtigen Antworten
