@@ -4,7 +4,7 @@ Eine einzelne, Offline-fähige Webseite zum Üben für den Einbürgerungstest.
 
 **Öffnen:** `index.html` doppelklicken. Kein Webserver, kein Build, keine Installation.
 
-**Online:** https://einbuergerungstest-mu.vercel.app (Vercel, wird bei jedem Push auf `main` neu gebaut)
+**Online:** https://einburgerungstestdeutschland.vercel.app (Vercel, wird bei jedem Push auf `main` neu gebaut)
 · https://youssefeghaly.github.io/einbuergerungstest/ (GitHub Pages)
 
 ## Was die Seite macht
