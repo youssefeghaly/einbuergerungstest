@@ -268,4 +268,55 @@ function run(window) {
     /0 von 460 Fragen bearbeitet/.test(q(window, "#app").textContent),
     "Anzeige steht nach dem Zurücksetzen wieder auf 0"
   );
+
+  console.log("\nKein doppelter Fragetext im selben Test");
+  // Mehrere amtliche Fragen haben denselben Wortlaut (z. B. "Welches Land ist
+  // ein Nachbarland von Deutschland?" kommt fünfmal vor). Früher konnten zwei
+  // davon im selben Durchlauf landen.
+  const data = window.QUESTION_DATA.questions;
+  const groups = {};
+  data.forEach((x) => {
+    const k = api.stemKey(x.question);
+    groups[k] = (groups[k] || 0) + 1;
+  });
+  const repeated = Object.values(groups).filter((n) => n > 1).length;
+  check(
+    repeated > 0,
+    "Katalog enthält tatsächlich mehrfach vorkommende Fragetexte (" + repeated + " Gruppen)"
+  );
+
+  api.store.reset();
+  const DRAWS = 2000;
+  let collisions = 0, wrongSize = 0, wrongState = 0, firstBad = null;
+  for (let i = 0; i < DRAWS; i++) {
+    const test = api.buildTest("HE");
+    if (test.length !== 33) wrongSize++;
+    if (test.filter((x) => x.part === "state").length !== 3) wrongState++;
+    const seen = new Set();
+    for (const x of test) {
+      const k = api.stemKey(x.question);
+      if (seen.has(k)) {
+        collisions++;
+        if (!firstBad) firstBad = x.question.slice(0, 60);
+        break;
+      }
+      seen.add(k);
+    }
+  }
+  check(
+    collisions === 0,
+    "in " + DRAWS + " Durchläufen kein doppelter Fragetext (gefunden: " + collisions +
+      (firstBad ? ", z. B. " + firstBad : "") + ")"
+  );
+  check(wrongSize === 0, "jeder Durchlauf hat genau 33 Fragen");
+  check(wrongState === 0, "jeder Durchlauf hat genau 3 Landesfragen");
+
+  // Extremfall: alle Fragen maximal dringlich - der Test muss trotzdem voll sein.
+  data.forEach((x) => { api.store.data[x.id] = { s: 9, w: 9, c: 0 }; });
+  let incomplete = 0;
+  for (let i = 0; i < 300; i++) {
+    if (api.buildTest("HE").length !== 33) incomplete++;
+  }
+  check(incomplete === 0, "auch bei durchweg hoher Gewichtung bleiben es 33 Fragen");
+  api.store.reset();
 }

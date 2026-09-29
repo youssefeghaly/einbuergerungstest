@@ -189,8 +189,9 @@
     var all = DATA.questions;
     var general = all.filter(function (q) { return q.part === "general"; });
     var regional = all.filter(function (q) { return q.part === "state" && q.state === stateCode; });
-    var picked = pickWeighted(general, GENERAL_COUNT)
-      .concat(pickWeighted(regional, STATE_COUNT));
+    var usedStems = {};
+    var picked = pickWeighted(general, GENERAL_COUNT, usedStems)
+      .concat(pickWeighted(regional, STATE_COUNT, usedStems));
     return shuffle(picked);
   }
 
@@ -254,14 +255,39 @@
     return Math.min(8, Math.max(0.15, w));
   }
 
+  // Mehrere amtliche Fragen haben denselben Wortlaut, aber andere
+  // Antwortmöglichkeiten (z. B. "Welches Land ist ein Nachbarland von
+  // Deutschland?" kommt fünfmal vor). Für den Test zählen sie als derselbe
+  // Fragetext, damit er nicht zweimal dieselbe Frage stellt.
+  function stemKey(text) {
+    return text.toLowerCase().replace(/[^a-z0-9äöüß]+/g, " ").trim();
+  }
+
   // Gewichtete Ziehung ohne Zurücklegen (Efraimidis-Spirakis): jede Frage
   // bekommt den Schlüssel random^(1/Gewicht), die grössten gewinnen.
-  function pickWeighted(items, count) {
+  // usedStems verhindert, dass derselbe Fragetext zweimal im Test landet.
+  function pickWeighted(items, count, usedStems) {
     var keyed = items.map(function (q) {
       return { q: q, key: Math.pow(Math.random(), 1 / weight(q.id)) };
     });
     keyed.sort(function (a, b) { return b.key - a.key; });
-    return keyed.slice(0, count).map(function (entry) { return entry.q; });
+
+    var out = [], taken = {}, i;
+    for (i = 0; i < keyed.length && out.length < count; i++) {
+      var key = stemKey(keyed[i].q.question);
+      if (usedStems[key]) continue;
+      usedStems[key] = true;
+      taken[keyed[i].q.id] = true;
+      out.push(keyed[i].q);
+    }
+    // Notfall: reicht die Zahl verschiedener Fragetexte nicht, wird aufgefüllt,
+    // damit der Test immer vollständig ist.
+    for (i = 0; i < keyed.length && out.length < count; i++) {
+      if (taken[keyed[i].q.id]) continue;
+      taken[keyed[i].q.id] = true;
+      out.push(keyed[i].q);
+    }
+    return out;
   }
 
   function progressStats() {
@@ -519,6 +545,7 @@
   window.__EIT__ = {
     buildTest: buildTest,
     weight: weight,
+    stemKey: stemKey,
     store: store,
     progressStats: progressStats,
     render: render,

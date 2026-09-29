@@ -1,0 +1,12 @@
+{
+  "name": "einbuergerungstest",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Übungsseite für den Einbürgerungstest (nur statische Dateien)",
+  "scripts": {
+    "test": "node tools/test_app.js"
+  },
+  "devDependencies": {
+    "jsdom": "^27.0.0"
+  }
+}

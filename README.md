@@ -11,6 +11,10 @@ Eine einzelne, Offline-fähige Webseite zum Üben für den Einbürgerungstest.
 
 - **33 Fragen pro Durchlauf**: 30 allgemeine Fragen aus dem amtlichen Katalog von
   300 und 3 Fragen zum gewählten Bundesland aus dessen 10 Landesfragen.
+- **Kein Fragetext zweimal pro Durchlauf**: Im amtlichen Katalog haben sieben
+  Fragen denselben Wortlaut, aber andere Antwortmöglichkeiten – „Welches Land ist
+  ein Nachbarland von Deutschland?“ kommt allein fünfmal vor. Der Test stellt
+  jede Formulierung trotzdem nur einmal.
 - **Sofortige Rückmeldung** nach jeder Antwort: richtig/falsch markiert, die
   richtige Antwort wird genannt.
 - **Keine Uhr und kein Bestehen/Durchfallen** – du gehst in deinem Tempo vor,
@@ -92,13 +96,16 @@ wenn etwas nicht passt.
 ## Test der Seite
 
 ```bash
-npm install jsdom
-node tools/test_app.js
+npm install
+npm test
 ```
 
 Der Test spielt einen kompletten Durchlauf im DOM durch, zählt die Punktzahl
 unabhängig mit und prüft unter anderem, dass genau 3 Landesfragen gezogen
-werden, keine Frage doppelt vorkommt und die Rückmeldung zur Antwort passt.
+werden, keine Frage doppelt vorkommt, die Rückmeldung zur Antwort passt, die
+adaptive Gewichtung wirkt und in 2000 Durchläufen kein Fragetext zweimal im
+selben Test landet. `jsdom` wird nur für diesen Test gebraucht und ist die
+einzige Abhängigkeit.
 
 ## Bereitstellung
 

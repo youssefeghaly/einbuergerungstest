@@ -5,4 +5,7 @@ data/raw
 data/source
 data/catalog_pdf.json
 tools
+node_modules
+package.json
+package-lock.json
 .DS_Store
