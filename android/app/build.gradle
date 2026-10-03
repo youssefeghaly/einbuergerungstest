@@ -1,0 +1,44 @@
+plugins {
+  id 'com.android.application'
+}
+
+android {
+  namespace 'com.einbuergerungstest.app'
+  // minSdk 24: WebView with a solid ES5-era JavaScript engine and modern
+  // DOM storage. targetSdk 35 because that is what the installed platform is.
+  compileSdk 35
+
+  defaultConfig {
+    applicationId 'com.einbuergerungstest.app'
+    minSdk 24
+    targetSdk 35
+    versionCode 1
+    versionName '1.0'
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      proguardFiles getDefaultProguardFile('proguard-android-optimize.txt')
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  // The web app is plain files; nothing here needs to be compressed twice.
+  androidResources {
+    noCompress 'jpg'
+  }
+
+  lint {
+    abortOnError false
+  }
+}
+
+// No dependencies at all. Everything is `android.webkit.*` and
+// `android.app.Activity` from the platform, which is deliberate: it keeps the
+// APK small and the build needs nothing from Google's Maven.
+dependencies { }

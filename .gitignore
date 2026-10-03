@@ -2,3 +2,20 @@
 node_modules/
 .vercel
 .env*
+
+# Android build: the Gradle dependency cache alone is ~107 MB and the SDK is
+# referenced from outside the repository, so neither belongs in git.
+android/.gradle-home/
+android/.android/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+*.keystore
+
+# The web app is copied in by android/build.sh on every build, so the copy is
+# not tracked: it would double the images in git and could go stale.
+android/app/src/main/assets/
+
+# The APK is the deliverable and is committed on purpose (see README).
+!einbuergerungstest.apk

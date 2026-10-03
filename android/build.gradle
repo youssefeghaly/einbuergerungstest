@@ -1,0 +1,5 @@
+/* The Android Gradle plugin, declared once. `apply false` because the version
+ * belongs here and the plugin is applied in :app. */
+plugins {
+  id 'com.android.application' version '8.7.3' apply false
+}

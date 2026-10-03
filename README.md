@@ -1,8 +1,13 @@
 # Einbürgerungstest – Übung
 
-Eine einzelne, Offline-fähige Webseite zum Üben für den Einbürgerungstest.
+Eine einzelne, Offline-fähige Webseite zum Üben für den Einbürgerungstest –
+und eine Android-App, die dieselbe Seite ganz ohne Netz zeigt.
 
-**Öffnen:** `index.html` doppelklicken. Kein Webserver, kein Build, keine Installation.
+**Android-App:** `einbuergerungstest.apk` (4 MB) auf das Handy kopieren und
+antippen. Die Installation aus unbekannten Quellen muss dafür erlaubt sein.
+Die App braucht **keine einzige Berechtigung**, auch nicht Internet.
+
+**Im Browser:** `index.html` doppelklicken. Kein Webserver, kein Build, keine Installation.
 
 **Online:** https://einburgerungstestdeutschland.vercel.app (Vercel, wird bei jedem Push auf `main` neu gebaut)
 · https://youssefeghaly.github.io/einbuergerungstest/ (GitHub Pages)
@@ -107,6 +112,44 @@ adaptive Gewichtung wirkt und in 2000 Durchläufen kein Fragetext zweimal im
 selben Test landet. `jsdom` wird nur für diesen Test gebraucht und ist die
 einzige Abhängigkeit.
 
+## Android-App bauen
+
+```bash
+cd android
+./build.sh            # Debug-APK, sofort installierbar
+./build.sh release    # unsigniertes Release-APK
+```
+
+Das Ergebnis landet als `einbuergerungstest.apk` im Projektverzeichnis.
+
+`build.sh` benutzt das Android-SDK und die Gradle-Distribution, die unter
+`../Financial Overview/.toolchain` bereits auf dem Rechner liegen – **es wird
+nichts heruntergeladen**. Der Gradle-Abhängigkeitscache (~107 MB) wird beim
+ersten Build einmalig nach `android/.gradle-home/` kopiert, damit Gradle seine
+Artefakt-Transformationen schreiben kann; `GRADLE_RO_DEP_CACHE` funktioniert
+dafür nicht.
+
+Die Web-App wird bei jedem Build frisch nach `android/app/src/main/assets/`
+kopiert, damit die APK nicht veralten kann.
+
+### Wie die App aufgebaut ist
+
+Eine Activity mit einem `WebView` in `android/app/src/main/java/com/einbuergerungstest/app/MainActivity.java`.
+Keine einzige Abhängigkeit – nur `android.webkit.*` und `android.app.Activity`,
+deshalb ist die APK 4 MB klein und der Build braucht kein Google-Maven.
+
+Zwei Entscheidungen sind erklärungsbedürftig:
+
+- **Die Seite wird über eine erfundene `https`-Herkunft ausgeliefert**, nicht
+  über `file:///android_asset/`. Eine `file://`-Seite ist eine undurchsichtige
+  Herkunft, und darauf verweigert der WebView `localStorage` – der adaptive Teil
+  (falsch beantwortete Fragen kommen häufiger) würde stillschweigend aufhören zu
+  funktionieren, ohne dass auf dem Bildschirm etwas darauf hinweist. Jede
+  Anfrage an diese Herkunft wird aus der APK beantwortet, das Netz wird nie
+  benutzt.
+- **Die App fordert keine `INTERNET`-Berechtigung an.** Damit kann sie
+  nachweislich nichts nachladen, auch nicht versehentlich.
+
 ## Bereitstellung
 
 Das Vercel-Projekt `sandpitsolutions/einbuergerungstest` ist mit diesem
@@ -115,7 +158,8 @@ Bereitstellung aus** (Dauer bis zur Veröffentlichung: ein bis drei Minuten).
 Ein `vercel deploy --prod` von Hand ist nicht nötig.
 
 Ausgeliefert wird nur, was die Seite im Browser braucht; `data/raw` (das amtliche
-PDF), `data/source` und `tools/` bleiben über `.vercelignore` aussen vor.
+PDF), `data/source`, `tools/` und der Android-Teil bleiben über `.vercelignore`
+aussen vor.
 
 ## Grenzen
 

@@ -8,4 +8,7 @@ tools
 node_modules
 package.json
 package-lock.json
+# The Android project is not part of the website, but the built APK is served
+# on purpose: that gives a clean https link to download it on a phone.
+android
 .DS_Store
