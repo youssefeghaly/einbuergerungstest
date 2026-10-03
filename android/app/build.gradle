@@ -12,9 +12,10 @@ android {
     applicationId 'com.einbuergerungstest.app'
     minSdk 24
     targetSdk 35
-    // 2: the page is inset clear of the status bar and the camera cutout.
-    versionCode 2
-    versionName '1.1'
+    // 3: insets are read from the window root, so a consumed dispatch cannot
+    //    leave the page under the status bar. 2 was the first attempt at this.
+    versionCode 3
+    versionName '1.2'
   }
 
   buildTypes {

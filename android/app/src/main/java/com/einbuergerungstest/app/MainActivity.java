@@ -6,6 +6,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.view.DisplayCutout;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
@@ -111,34 +112,81 @@ public class MainActivity extends Activity {
         view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                int left, top, right, bottom;
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    android.graphics.Insets bars = Api30.systemBarsAndCutout(insets);
-                    left = bars.left;
-                    top = bars.top;
-                    right = bars.right;
-                    bottom = bars.bottom;
-                } else {
-                    left = insets.getSystemWindowInsetLeft();
-                    top = insets.getSystemWindowInsetTop();
-                    right = insets.getSystemWindowInsetRight();
-                    bottom = insets.getSystemWindowInsetBottom();
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        // On a notched phone the status bar inset does not
-                        // always cover the cutout itself, so take the larger.
-                        DisplayCutout cutout = insets.getDisplayCutout();
-                        if (cutout != null) {
-                            left = Math.max(left, cutout.getSafeInsetLeft());
-                            top = Math.max(top, cutout.getSafeInsetTop());
-                            right = Math.max(right, cutout.getSafeInsetRight());
-                            bottom = Math.max(bottom, cutout.getSafeInsetBottom());
-                        }
-                    }
-                }
-                v.setPadding(left, top, right, bottom);
+                // Deliberately ignores the insets handed to this view and reads
+                // the window's own instead. An intermediate layout is free to
+                // consume the system-window insets on the way down, in which
+                // case the values arriving here are already zero — which is
+                // exactly how the page ended up drawn under the status bar.
+                // getRootWindowInsets() reports what the window actually has,
+                // whatever happened in between.
+                syncInsetsFromRoot();
                 return insets;
             }
         });
+
+        // Belt and braces: the listener above only runs when the insets are
+        // dispatched, and the first dispatch can happen before the view is
+        // attached. Re-checking on layout costs nothing (it only writes when a
+        // value actually changed) and guarantees the padding is correct even
+        // if no dispatch ever arrives.
+        view.getViewTreeObserver().addOnGlobalLayoutListener(
+                new ViewTreeObserver.OnGlobalLayoutListener() {
+                    @Override
+                    public void onGlobalLayout() {
+                        syncInsetsFromRoot();
+                    }
+                });
+        view.requestApplyInsets();
+    }
+
+    /**
+     * Applies the window's status-bar, cutout and navigation-bar insets as
+     * padding on the WebView.
+     *
+     * <p>Padding rather than a window inset, because padding keeps the page's
+     * own background colour painted in the gap — the strip beside the camera
+     * hole then reads as part of the app instead of a band bolted on top.
+     */
+    private void syncInsetsFromRoot() {
+        if (webView == null) {
+            return;
+        }
+        WindowInsets insets = webView.getRootWindowInsets();
+        if (insets == null) {
+            return;
+        }
+
+        int left, top, right, bottom;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            android.graphics.Insets bars = Api30.systemBarsAndCutout(insets);
+            left = bars.left;
+            top = bars.top;
+            right = bars.right;
+            bottom = bars.bottom;
+        } else {
+            left = insets.getSystemWindowInsetLeft();
+            top = insets.getSystemWindowInsetTop();
+            right = insets.getSystemWindowInsetRight();
+            bottom = insets.getSystemWindowInsetBottom();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                // On a notched phone the status bar inset does not always
+                // cover the cutout itself, so take the larger of the two.
+                DisplayCutout cutout = insets.getDisplayCutout();
+                if (cutout != null) {
+                    left = Math.max(left, cutout.getSafeInsetLeft());
+                    top = Math.max(top, cutout.getSafeInsetTop());
+                    right = Math.max(right, cutout.getSafeInsetRight());
+                    bottom = Math.max(bottom, cutout.getSafeInsetBottom());
+                }
+            }
+        }
+
+        // Only write when something changed, so the layout listener above
+        // cannot keep triggering itself.
+        if (webView.getPaddingLeft() != left || webView.getPaddingTop() != top
+                || webView.getPaddingRight() != right || webView.getPaddingBottom() != bottom) {
+            webView.setPadding(left, top, right, bottom);
+        }
     }
 
     /** Isolated so the API-30 types are only ever touched on API 30 and up. */
