@@ -1,7 +1,14 @@
 package com.einbuergerungstest.app;
 
 import android.app.Activity;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
+import android.view.DisplayCutout;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
@@ -34,6 +41,9 @@ public class MainActivity extends Activity {
     /** The origin the page believes it is on. Never resolved over the network. */
     private static final String ORIGIN = "https://einbuergerungstest.local";
 
+    /** The page's own background, so the inset padding matches it. */
+    private static final int PAGE_BACKGROUND = Color.parseColor("#f4f5f7");
+
     private WebView webView;
 
     @Override
@@ -52,12 +62,100 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
 
         webView.setWebViewClient(new LocalAssets());
+        // The page is a light grey; painting the WebView the same colour means
+        // the inset padding above and below it does not show as a seam.
+        webView.setBackgroundColor(PAGE_BACKGROUND);
 
         setContentView(webView);
+        applyEdgeToEdgeInsets(webView);
+
         if (savedInstanceState != null) {
             webView.restoreState(savedInstanceState);
         } else {
             webView.loadUrl(ORIGIN + "/index.html");
+        }
+    }
+
+    /**
+     * Keeps the page clear of the status bar, the camera cutout and the
+     * navigation bar.
+     *
+     * <p><b>Why this is needed at all.</b> From Android 15 an app targeting
+     * SDK 35 is drawn edge to edge whether it asks for it or not: the window
+     * extends under the status bar and into the notch, and nothing is inset
+     * automatically. Without this the first line of the page sits behind the
+     * clock and the cutout. The same is made true deliberately on older
+     * releases below, so one code path covers every version instead of the
+     * layout shifting depending on the phone.
+     *
+     * <p>Insets are applied as <b>padding on the WebView</b> rather than by
+     * leaving the system to inset the window, because padding keeps the page's
+     * own background colour painted in the gap — the area beside the notch
+     * looks like part of the app, not like a bar bolted on top of it.
+     */
+    private void applyEdgeToEdgeInsets(final WebView view) {
+        Window window = getWindow();
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            Api30.edgeToEdge(window);
+        } else {
+            // The pre-Android-11 spelling of the same thing, plus dark status
+            // bar icons so the clock stays readable on the light background.
+            window.getDecorView().setSystemUiVisibility(
+                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                            | View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+        }
+
+        view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                int left, top, right, bottom;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    android.graphics.Insets bars = Api30.systemBarsAndCutout(insets);
+                    left = bars.left;
+                    top = bars.top;
+                    right = bars.right;
+                    bottom = bars.bottom;
+                } else {
+                    left = insets.getSystemWindowInsetLeft();
+                    top = insets.getSystemWindowInsetTop();
+                    right = insets.getSystemWindowInsetRight();
+                    bottom = insets.getSystemWindowInsetBottom();
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        // On a notched phone the status bar inset does not
+                        // always cover the cutout itself, so take the larger.
+                        DisplayCutout cutout = insets.getDisplayCutout();
+                        if (cutout != null) {
+                            left = Math.max(left, cutout.getSafeInsetLeft());
+                            top = Math.max(top, cutout.getSafeInsetTop());
+                            right = Math.max(right, cutout.getSafeInsetRight());
+                            bottom = Math.max(bottom, cutout.getSafeInsetBottom());
+                        }
+                    }
+                }
+                v.setPadding(left, top, right, bottom);
+                return insets;
+            }
+        });
+    }
+
+    /** Isolated so the API-30 types are only ever touched on API 30 and up. */
+    private static class Api30 {
+        static void edgeToEdge(Window window) {
+            window.setDecorFitsSystemWindows(false);
+            WindowInsetsController controller = window.getInsetsController();
+            if (controller != null) {
+                controller.setSystemBarsAppearance(
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                        WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+            }
+        }
+
+        static android.graphics.Insets systemBarsAndCutout(WindowInsets insets) {
+            return insets.getInsets(
+                    WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
         }
     }
 

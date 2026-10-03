@@ -12,8 +12,9 @@ android {
     applicationId 'com.einbuergerungstest.app'
     minSdk 24
     targetSdk 35
-    versionCode 1
-    versionName '1.0'
+    // 2: the page is inset clear of the status bar and the camera cutout.
+    versionCode 2
+    versionName '1.1'
   }
 
   buildTypes {

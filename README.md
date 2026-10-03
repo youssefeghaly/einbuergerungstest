@@ -138,7 +138,7 @@ Eine Activity mit einem `WebView` in `android/app/src/main/java/com/einbuergerun
 Keine einzige Abhängigkeit – nur `android.webkit.*` und `android.app.Activity`,
 deshalb ist die APK 4 MB klein und der Build braucht kein Google-Maven.
 
-Zwei Entscheidungen sind erklärungsbedürftig:
+Drei Entscheidungen sind erklärungsbedürftig:
 
 - **Die Seite wird über eine erfundene `https`-Herkunft ausgeliefert**, nicht
   über `file:///android_asset/`. Eine `file://`-Seite ist eine undurchsichtige
@@ -149,6 +149,16 @@ Zwei Entscheidungen sind erklärungsbedürftig:
   benutzt.
 - **Die App fordert keine `INTERNET`-Berechtigung an.** Damit kann sie
   nachweislich nichts nachladen, auch nicht versehentlich.
+- **Die Seite wird um die Systemleisten herum eingerückt.** Ab Android 15 wird
+  eine App mit `targetSdk 35` vom System auf Rand-zu-Rand gezwungen: Sie zeichnet
+  unter die Statusleiste und in die Kamerakerbung, und nichts wird automatisch
+  freigehalten. Ohne Gegenmaßnahme beginnt die erste Zeile der Seite hinter der
+  Uhr. Die Einschnitte (Statusleiste, Aussparung, Navigationsleiste) werden
+  deshalb als **Innenabstand des WebView** gesetzt – nicht als Fensterrand –,
+  damit in der Lücke die Hintergrundfarbe der Seite steht und die Fläche neben
+  der Kerbung wie ein Teil der App wirkt. Auf älteren Android-Versionen wird
+  derselbe Zustand absichtlich hergestellt, damit ein einziger Codepfad für alle
+  Geräte gilt.
 
 ## Bereitstellung
 
