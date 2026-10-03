@@ -1,14 +1,10 @@
 package com.einbuergerungstest.app;
 
 import android.app.Activity;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.DisplayMetrics;
 import android.view.DisplayCutout;
-import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -21,7 +17,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,7 +49,6 @@ public class MainActivity extends Activity {
 
     private WebView webView;
     private FrameLayout root;
-    private TextView diagnostics;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,20 +74,6 @@ public class MainActivity extends Activity {
         webView.setBackgroundColor(PAGE_BACKGROUND);
         root.addView(webView, new FrameLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-
-        // Temporary: shows the numbers the layout actually measured, so the
-        // next report is data rather than a guess. Remove once the inset
-        // behaviour is confirmed on the device.
-        diagnostics = new TextView(this);
-        diagnostics.setTextColor(Color.WHITE);
-        diagnostics.setBackgroundColor(0xCC000000);
-        diagnostics.setTextSize(9f);
-        diagnostics.setTypeface(Typeface.MONOSPACE);
-        diagnostics.setPadding(12, 12, 12, 12);
-        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP | Gravity.START);
-        root.addView(diagnostics, lp);
 
         setContentView(root);
         applyEdgeToEdgeInsets(root);
@@ -215,47 +195,6 @@ public class MainActivity extends Activity {
                 || root.getPaddingRight() != right || root.getPaddingBottom() != bottom) {
             root.setPadding(left, top, right, bottom);
         }
-        refreshDiagnostics(insets, left, top, right, bottom);
-    }
-
-    /** Fills the on-screen panel with what was actually measured. */
-    private void refreshDiagnostics(WindowInsets insets, int left, int top, int right, int bottom) {
-        if (diagnostics == null) {
-            return;
-        }
-        DisplayMetrics dm = getResources().getDisplayMetrics();
-        int[] location = new int[2];
-        webView.getLocationOnScreen(location);
-
-        String version;
-        try {
-            version = getPackageManager()
-                    .getPackageInfo(getPackageName(), 0).versionName;
-        } catch (PackageManager.NameNotFoundException e) {
-            version = "?";
-        }
-
-        String cutout = "n/a";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && insets.getDisplayCutout() != null) {
-            DisplayCutout c = insets.getDisplayCutout();
-            cutout = c.getSafeInsetTop() + "px top";
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            cutout = "none";
-        }
-
-        diagnostics.setText(
-                "v" + version + "  " + Build.MANUFACTURER + " " + Build.MODEL
-                        + "\nAndroid API " + Build.VERSION.SDK_INT
-                        + "   screen " + dm.widthPixels + "x" + dm.heightPixels + " px"
-                        + "   density " + dm.density
-                        + "\ninsets: top=" + top + "  bottom=" + bottom
-                        + "  left=" + left + "  right=" + right
-                        + "\ncutout safe: " + cutout
-                        + "\nroot padding applied: t=" + root.getPaddingTop()
-                        + " b=" + root.getPaddingBottom()
-                        + "\nwebView top on screen: " + location[1] + " px"
-                        + "\npage content starts at: " + (location[1] + root.getPaddingTop()) + " px"
-                        + "\nstatus bar ends at: ~" + top + " px");
     }
 
     /** Isolated so the API-30 types are only ever touched on API 30 and up. */
