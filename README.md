@@ -6,11 +6,12 @@ und eine Android-App, die dieselbe Seite ganz ohne Netz zeigt.
 **Android-App:** `einbuergerungstest.apk` (4 MB) auf das Handy kopieren und
 antippen. Die Installation aus unbekannten Quellen muss dafür erlaubt sein.
 Die App braucht **keine einzige Berechtigung**, auch nicht Internet.
+Direkt auf dem Handy herunterladen:
+https://youssefeghaly.github.io/einbuergerungstest/einbuergerungstest.apk
 
 **Im Browser:** `index.html` doppelklicken. Kein Webserver, kein Build, keine Installation.
 
-**Online:** https://einburgerungstestdeutschland.vercel.app (Vercel, wird bei jedem Push auf `main` neu gebaut)
-· https://youssefeghaly.github.io/einbuergerungstest/ (GitHub Pages)
+**Online:** https://youssefeghaly.github.io/einbuergerungstest/ (GitHub Pages, wird bei jedem Push auf `main` neu gebaut)
 
 ## Was die Seite macht
 
@@ -162,14 +163,22 @@ Drei Entscheidungen sind erklärungsbedürftig:
 
 ## Bereitstellung
 
-Das Vercel-Projekt `sandpitsolutions/einbuergerungstest` ist mit diesem
-GitHub-Repository verbunden. **Jeder Push auf `main` löst automatisch eine neue
-Bereitstellung aus** (Dauer bis zur Veröffentlichung: ein bis drei Minuten).
-Ein `vercel deploy --prod` von Hand ist nicht nötig.
+Ausgeliefert wird über **GitHub Pages** aus diesem Repository:
+https://youssefeghaly.github.io/einbuergerungstest/
 
-Ausgeliefert wird nur, was die Seite im Browser braucht; `data/raw` (das amtliche
-PDF), `data/source`, `tools/` und der Android-Teil bleiben über `.vercelignore`
-aussen vor.
+**Jeder Push auf `main` baut die Seite automatisch neu**, in der Regel binnen
+einer Minute. Es gibt keinen Build-Schritt: die Dateien im Wurzelverzeichnis
+sind die Seite. Aus demselben Grund liegt auch die APK unter
+https://youssefeghaly.github.io/einbuergerungstest/einbuergerungstest.apk und
+lässt sich direkt auf dem Handy herunterladen.
+
+Nach einem Push brauchen die Dateien ein paar Minuten, bis sie überall
+ankommen: beide Hosts zwischenspeichern sie (GitHub Pages und
+`raw.githubusercontent.com` für rund fünf Minuten). Wer sofort den neuen Stand
+braucht, hängt eine Versionsnummer an die Adresse, etwa `?v=2`.
+
+Vercel wurde bewusst entfernt: Es hat hier genau dasselbe getan wie GitHub
+Pages, und für eine einzelne statische Seite ist ein Host genug.
 
 ## Grenzen
 
