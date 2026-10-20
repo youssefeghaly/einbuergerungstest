@@ -28,37 +28,38 @@ https://youssefeghaly.github.io/einbuergerungstest/einbuergerungstest.apk
 - **Auswertung** am Ende: Punktzahl, Vergleich mit der im echten Test nötigen
   Zahl von 17 richtigen Antworten und eine Liste aller 33 Fragen mit der jeweils
   richtigen Antwort.
-- **Der Test passt sich an:** Fragen, die du falsch beantwortest, kommen in den
-  folgenden Durchläufen häufiger. Sicher beherrschte Fragen werden seltener,
-  noch nie gesehene bevorzugt. Fragen, die du schon einmal falsch hattest,
-  werden vor der Antwort als Wiederholung gekennzeichnet.
+- **Jede Frage einmal:** „Test starten“ nimmt zuerst Fragen, die du noch nie
+  hattest, und arbeitet sich so durch den Katalog. Erst wenn alles einmal dran
+  war, kommen die am längsten nicht gesehenen wieder.
+- **Fehler-Übung:** Jede falsche Antwort landet in einem Fehlerstapel. Sobald
+  mehr als 33 Fragen darin liegen, startet der rote Knopf „Fehler üben“ einen
+  Test, der ausschliesslich aus diesen Fragen besteht.
 - **Bundesland** wird auf dem Startbildschirm gewählt (Voreinstellung Hessen).
 - Tastatur: `1`–`4` beantworten, `Enter`/`→` weiter, `←` zurück.
 
-## Wie die Anpassung funktioniert
+## Wie die Auswahl funktioniert
 
-Zu jeder der 460 Fragen merkt sich die Seite im `localStorage` des Browsers
-(Schlüssel `eit.progress.v1`) drei Werte: wie oft die Frage gesehen wurde, wie
-oft sie falsch beantwortet wurde und wie viele richtige Antworten in Folge
-kamen.
+Geübt wird der Vorrat deines Bundeslandes: die 300 allgemeinen Fragen und die
+10 Landesfragen, also **310 Fragen**. (Die übrigen 150 Landesfragen gehören zu
+anderen Bundesländern und kommen im echten Test nicht vor.)
 
-Daraus ergibt sich ein Gewicht:
+Zu jeder Frage merkt sich die Seite im `localStorage` des Browsers (Schlüssel
+`eit.progress.v1`): wie oft sie gesehen wurde, wann zuletzt, ob sie im
+Fehlerstapel liegt und wie viele richtige Antworten in Folge kamen.
 
-| Zustand der Frage | Gewicht |
-| --- | --- |
-| noch nie gesehen | 3,0 |
-| einmal falsch | 3,0 |
-| zweimal falsch | 5,0 |
-| dreimal falsch | 7,0 |
-| ab vier Fehlern | 8,0 (Obergrenze) |
-| richtig beantwortet | sinkt, z. B. 0,2 nach vier richtigen in Folge |
+**Normaler Test.** Zuerst kommen nur Fragen, die noch nie dran waren; sind
+weniger als 33 übrig, wird mit den am längsten nicht gesehenen aufgefüllt. So
+wandert der Test durch den ganzen Katalog, statt sich zu wiederholen. Sind die
+10 Landesfragen aufgebraucht, enthält der Test keine Landesfrage mehr, bis der
+Vorrat einmal komplett durch ist – wiederholt wird vorher nichts.
 
-Eine richtige Antwort senkt die Dringlichkeit wieder, sodass eine inzwischen
-sitzende Frage nicht dauerhaft den Test dominiert. Die 33 Fragen werden
-gewichtet **ohne Zurücklegen** gezogen, es gibt also nie Doppelte in einem
-Durchlauf. Gemessen an 400 Durchläufen erscheint eine viermal falsch
-beantwortete Frage rund 97-mal, eine sicher beherrschte rund 3-mal.
+**Fehler-Übung.** Eine falsche Antwort legt die Frage in den Fehlerstapel. Sie
+verlässt ihn erst nach **zwei richtigen Antworten in Folge**; ein erneuter
+Fehler setzt die Serie zurück. Der rote Knopf ist gesperrt, solange höchstens 33
+Fragen im Stapel liegen, und zieht dann 33 davon – 30 allgemeine und 3
+Landesfragen, wenn der Stapel das hergibt.
 
+Der Fehlerstapel zählt nur die Fragen des gerade gewählten Bundeslandes.
 Der Lernstand lässt sich auf dem Startbildschirm zurücksetzen. Er ist nur lokal
 im Browser gespeichert und wird nirgendwohin übertragen. Verbietet der Browser
 das Speichern (etwa bei manchen `file://`-Aufrufen), läuft die Seite ohne
@@ -107,11 +108,13 @@ npm test
 ```
 
 Der Test spielt einen kompletten Durchlauf im DOM durch, zählt die Punktzahl
-unabhängig mit und prüft unter anderem, dass genau 3 Landesfragen gezogen
-werden, keine Frage doppelt vorkommt, die Rückmeldung zur Antwort passt, die
-adaptive Gewichtung wirkt und in 2000 Durchläufen kein Fragetext zweimal im
-selben Test landet. `jsdom` wird nur für diesen Test gebraucht und ist die
-einzige Abhängigkeit.
+unabhängig mit und prüft unter anderem: genau 33 Fragen, höchstens 3
+Landesfragen, keine Wiederholung zwischen zwei Tests, das Leerlaufen der
+Landesfragen, die Auswahl der am längsten nicht gesehenen nach erschöpftem
+Vorrat, den Fehlerstapel samt Zwei-Richtige-Regel, die Sperre des roten Knopfes
+bis 34 Fehler und dass in 2000 Durchläufen kein Fragetext zweimal im selben
+Test landet. `jsdom` wird nur für diesen Test gebraucht und ist die einzige
+Abhängigkeit.
 
 ## Android-App bauen
 

@@ -177,7 +177,7 @@ function run(window) {
 
   console.log("\nZusammenstellung");
   check(hessen === 3, "genau 3 Fragen zu Hessen (war " + hessen + ")");
-  check(images >= 1, "Bildfragen werden mit Bild dargestellt (war " + images + ")");
+  // Bildfragen werden weiter unten gezielt geprüft (die Ziehung ist zufällig).
   check(seenIds.size === 33, "keine Frage doppelt im Test (eindeutige Labels: " + seenIds.size + ")");
 
   console.log("\nNeuer Test / Bundesland");
@@ -193,7 +193,7 @@ function run(window) {
   }
   check(bayern === 3, "mit Bayern werden 3 bayerische Fragen gezogen (war " + bayern + ")");
 
-  // ---------------- adaptive Auswahl und Lernstand ----------------
+  // ---------------- Lernstand, Fehlerstapel, Auswahl ----------------
   console.log("\nLernstand speichern");
   const api = window.__EIT__;
   check(!!api, "Testzugang vorhanden");
@@ -208,49 +208,141 @@ function run(window) {
     "Zurücksetzen entfernt den gespeicherten Lernstand"
   );
 
-  console.log("\nVergessen und Dringlichkeit");
-  for (let i = 0; i < 4; i++) api.store.record("5", false);
+  console.log("\nFehlerstapel: zwei richtige Antworten nötig");
+  api.store.record("5", false);
   let s5 = api.store.get("5");
-  check(s5.w === 4 && s5.c === 0, "viermal falsch -> w=4, c=0 (war w=" + s5.w + ", c=" + s5.c + ")");
+  check(s5.bad === true && s5.streak === 0, "falsche Antwort landet im Fehlerstapel");
   api.store.record("5", true);
   s5 = api.store.get("5");
-  check(s5.w === 3 && s5.c === 1, "richtige Antwort verringert die Dringlichkeit (w=" + s5.w + ", c=" + s5.c + ")");
+  check(s5.bad === true && s5.streak === 1, "eine richtige Antwort reicht noch nicht (Serie " + s5.streak + ")");
+  api.store.record("5", true);
+  check(api.store.get("5").bad === false, "zwei richtige Antworten in Folge entfernen die Frage");
+  api.store.record("6", false);
+  api.store.record("6", true);
+  api.store.record("6", false);
+  check(api.store.get("6").streak === 0, "ein erneuter Fehler setzt die Serie zurück");
 
-  console.log("\nAdaptive Auswahl");
+  console.log("\nKeine Wiederholung zwischen zwei Tests");
   api.store.reset();
-  const hard = "5", easy = "6";
-  api.store.data[hard] = { s: 4, w: 4, c: 0 };
-  api.store.data[easy] = { s: 4, w: 0, c: 4 };
-  const wHard = api.weight(hard), wEasy = api.weight(easy), wNew = api.weight("7");
-  check(wHard > wEasy, "falsch beantwortete Frage wiegt schwerer (" + wHard + " > " + wEasy + ")");
-  check(wNew > wEasy, "nie gesehene Frage hat Vorrang vor beherrschter (" + wNew + " > " + wEasy + ")");
-
-  const RUNS = 400;
-  let hardCount = 0, easyCount = 0;
-  for (let i = 0; i < RUNS; i++) {
-    const test = api.buildTest("HE");
-    if (test.some((x) => x.id === hard)) hardCount++;
-    if (test.some((x) => x.id === easy)) easyCount++;
-  }
+  const first = api.buildTest("HE").map((x) => x.id);
+  first.forEach((id) => {
+    api.store.data[id] = { s: 1, t: Date.now(), bad: false, streak: 0 };
+  });
+  const second = api.buildTest("HE").map((x) => x.id);
+  const overlap = second.filter((id) => first.indexOf(id) !== -1);
   check(
-    hardCount > easyCount * 2,
-    "falsch beantwortete Frage kommt deutlich häufiger vor (" +
-      hardCount + "x vs " + easyCount + "x bei " + RUNS + " Durchläufen)"
+    overlap.length === 0,
+    "zweiter Test wiederholt keine Frage des ersten (" + overlap.length + " Überschneidungen)"
   );
 
-  console.log("\nHinweis auf Wiederholung");
-  api.store.data["1"] = { s: 3, w: 3, c: 0 };
-  let found = false;
-  for (let attempt = 0; attempt < 60 && !found; attempt++) {
-    q(window, '[data-act="home"]').click();
-    q(window, "#state").value = "HE";
-    q(window, '[data-act="start"]').click();
-    const at = api.view.test.findIndex((x) => x.id === "1");
-    if (at === -1) continue;
-    for (let step = 0; step < at; step++) q(window, '[data-act="next"]').click();
-    found = !!q(window, ".repeat-hint");
+  console.log("\nLandesfragen gehen zur Neige");
+  api.store.reset();
+  const seenState = new Set();
+  const counts = [];
+  for (let round = 0; round < 5; round++) {
+    const test = api.buildTest("HE");
+    const st = test.filter((x) => x.part === "state");
+    counts.push(st.length);
+    st.forEach((x) => seenState.add(x.id));
+    test.forEach((x) => {
+      api.store.data[x.id] = { s: 1, t: Date.now(), bad: false, streak: 0 };
+    });
+    check(test.length === 33, "Durchlauf " + (round + 1) + " hat 33 Fragen");
   }
-  check(found, "bereits falsch beantwortete Frage wird als Wiederholung gekennzeichnet");
+  check(seenState.size === 10, "alle 10 Landesfragen kamen vor (" + seenState.size + ")");
+  check(counts[4] === 0, "im 5. Durchlauf keine Landesfrage mehr (" + counts.join(", ") + ")");
+
+  console.log("\nErschöpfter Vorrat: am längsten nicht gesehen");
+  api.store.reset();
+  const poolIds = api.poolFor("HE").map((x) => x.id);
+  check(poolIds.length === 310, "Vorrat umfasst 310 Fragen (" + poolIds.length + ")");
+  poolIds.forEach((id, i) => {
+    api.store.data[id] = { s: 2, t: 1000 + i, bad: false, streak: 0 };
+  });
+  const lru = api.buildTest("HE");
+  check(lru.length === 33, "auch nach dem Erschöpfen 33 Fragen");
+  const generalPicked = lru.filter((x) => x.part === "general");
+  const oldestGeneral = poolIds.slice(0, 60);
+  check(
+    generalPicked.every((x) => oldestGeneral.indexOf(x.id) !== -1),
+    "die allgemeinen Fragen kommen aus den am längsten nicht gesehenen"
+  );
+  check(
+    lru.filter((x) => x.part === "state").length === 3,
+    "nach dem Erschöpfen wieder 3 Landesfragen"
+  );
+
+  console.log("\nFehler-Übung");
+  api.store.reset();
+  const pool = api.poolFor("HE");
+  const badGeneral = pool.filter((q) => q.part === "general").slice(0, 50);
+  const badState = pool.filter((q) => q.part === "state").slice(0, 10);
+  badGeneral.concat(badState).forEach((q) => {
+    api.store.data[q.id] = { s: 1, t: Date.now(), bad: true, streak: 0 };
+  });
+  check(api.wrongPool("HE").length === 60, "Fehlerstapel enthält 60 Fragen");
+  const wt = api.buildWrongTest("HE");
+  check(wt.length === 33, "Fehler-Test hat 33 Fragen");
+  check(wt.every((x) => api.store.get(x.id).bad), "Fehler-Test enthält ausschliesslich falsche Fragen");
+  check(
+    wt.filter((x) => x.part === "state").length === 3,
+    "Fehler-Test hält 30 + 3 ein (Landesfragen: " + wt.filter((x) => x.part === "state").length + ")"
+  );
+
+  console.log("\nRoter Knopf erst ab mehr als 33 Fehlern");
+  api.store.reset();
+  api.view.phase = "start";
+  api.view.stateCode = "HE";
+  api.render();
+  let wrongBtn = q(window, '[data-act="start-wrong"]');
+  check(!!wrongBtn, "roter Knopf ist vorhanden");
+  check(wrongBtn.disabled === true, "bei 0 Fehlern gesperrt");
+  const first33 = pool.filter((q) => q.part === "general").slice(0, 33);
+  first33.forEach((q) => { api.store.data[q.id] = { s: 1, t: 1, bad: true, streak: 0 }; });
+  api.render();
+  check(
+    q(window, '[data-act="start-wrong"]').disabled === true,
+    "bei genau 33 Fehlern noch gesperrt"
+  );
+  api.store.data[pool.filter((q) => q.part === "general")[33].id] = {
+    s: 1, t: 1, bad: true, streak: 0,
+  };
+  api.render();
+  check(
+    q(window, '[data-act="start-wrong"]').disabled === false,
+    "ab 34 Fehlern freigeschaltet"
+  );
+  q(window, '[data-act="start-wrong"]').click();
+  check(api.view.mode === "wrong", "Klick startet die Fehler-Übung");
+  check(/Fehler-Übung/.test(q(window, ".qmeta").textContent), "die Frage ist als Fehler-Übung gekennzeichnet");
+
+  console.log("\nHinweis auf Wiederholung");
+  api.store.reset();
+  const hintPool = api.poolFor("HE").filter((x) => x.part === "general").slice(0, 40);
+  hintPool.forEach((x) => {
+    api.store.data[x.id] = { s: 1, t: 1, bad: true, streak: 0 };
+  });
+  api.view.stateCode = "HE";
+  api.beginTest("wrong");
+  check(api.view.test.length === 33, "Fehler-Übung startet mit 33 Fragen");
+  check(!!q(window, ".repeat-hint"), "bereits falsch beantwortete Frage wird als Wiederholung gekennzeichnet");
+
+  console.log("\nBildfragen werden angezeigt");
+  api.store.reset();
+  api.poolFor("HE").forEach((x) => {
+    if (!x.image) api.store.data[x.id] = { s: 3, t: 1, bad: false, streak: 0 };
+  });
+  const imgTest = api.buildTest("HE");
+  const imgAt = imgTest.findIndex((x) => x.image);
+  check(imgAt !== -1, "Bildfrage wird gezogen");
+  if (imgAt !== -1) {
+    api.view.test = imgTest;
+    api.view.answers = imgTest.map(() => null);
+    api.view.index = imgAt;
+    api.view.phase = "quiz";
+    api.render();
+    check(!!q(window, ".qimg"), "Bild wird im Test dargestellt");
+  }
 
   console.log("\nZurücksetzen über die Oberfläche");
   api.store.record("2", false);
@@ -258,14 +350,14 @@ function run(window) {
   api.render();
   const resetBtn = q(window, '[data-act="reset"]');
   check(!!resetBtn, "Knopf zum Zurücksetzen erscheint, sobald Fortschritt existiert");
-  check(/von 460 Fragen bearbeitet/.test(q(window, "#app").textContent), "Lernstand wird angezeigt");
+  check(/von 310 Fragen gesehen/.test(q(window, "#app").textContent), "Lernstand wird angezeigt");
   if (resetBtn) resetBtn.click();
   check(
     window.localStorage.getItem("eit.progress.v1") === null,
     "Zurücksetzen über die Oberfläche löscht den Lernstand"
   );
   check(
-    /0 von 460 Fragen bearbeitet/.test(q(window, "#app").textContent),
+    /0 von 310 Fragen gesehen/.test(q(window, "#app").textContent),
     "Anzeige steht nach dem Zurücksetzen wieder auf 0"
   );
 
@@ -312,7 +404,7 @@ function run(window) {
   check(wrongState === 0, "jeder Durchlauf hat genau 3 Landesfragen");
 
   // Extremfall: alle Fragen maximal dringlich - der Test muss trotzdem voll sein.
-  data.forEach((x) => { api.store.data[x.id] = { s: 9, w: 9, c: 0 }; });
+  data.forEach((x) => { api.store.data[x.id] = { s: 9, t: 1, bad: true, streak: 0 }; });
   let incomplete = 0;
   for (let i = 0; i < 300; i++) {
     if (api.buildTest("HE").length !== 33) incomplete++;

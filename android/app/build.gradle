@@ -12,11 +12,10 @@ android {
     applicationId 'com.einbuergerungstest.app'
     minSdk 24
     targetSdk 35
-    // 5: the diagnostic panel removed again; the insets handling is unchanged
-    //    from build 3, which was confirmed correct on a OnePlus 15 (Android 16,
-    //    141 px status bar + cutout, content starting exactly at 141 px).
-    versionCode 5
-    versionName '1.4'
+    // 6: jede Frage einmal (nie gesehene zuerst), Fehlerstapel und der rote
+    //    Knopf „Fehler üben“ ab 34 falschen Fragen.
+    versionCode 6
+    versionName '1.5'
   }
 
   buildTypes {
