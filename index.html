@@ -74,6 +74,17 @@
     color: #8a6b67;
   }
   .grow { flex: 1 1 45%; }
+  /* „Beenden“ im Test: klein und zurückhaltend, damit es nicht mit
+     „Weiter“ konkurriert. */
+  .ghost {
+    padding: 6px 12px;
+    font-size: .85rem;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--line);
+  }
+  .ghost:hover:not(:disabled) { background: #fff; border-color: #b9c2cc; color: var(--ink); }
   select {
     font: inherit;
     padding: 11px 12px;
@@ -184,6 +195,9 @@
     answers: [],
     index: 0
   };
+
+  // Ob für den laufenden Test ein Eintrag in der Verlaufsliste steht.
+  var historyArmed = false;
 
   function esc(s) {
     return String(s).replace(/[&<>"']/g, function (c) {
@@ -386,6 +400,17 @@
     return shuffle(picked.slice(0, TOTAL));
   }
 
+  // Ein Test lässt sich jederzeit abbrechen; bereits gegebene Antworten bleiben
+  // im Lernstand, der Rest des Durchlaufs wird verworfen.
+  function goHome() {
+    view.phase = "start";
+    view.mode = "normal";
+    view.test = [];
+    view.answers = [];
+    view.index = 0;
+    render();
+  }
+
   // Startet einen Durchlauf im gewünschten Modus.
   function beginTest(mode) {
     view.mode = mode;
@@ -393,6 +418,16 @@
     view.answers = view.test.map(function () { return null; });
     view.index = 0;
     view.phase = "quiz";
+    // Ein Eintrag in der Verlaufsliste, damit die Zurück-Taste des Telefons zur
+    // Startseite führt statt die App zu schliessen.
+    if (!historyArmed) {
+      try {
+        window.history.pushState({ eitTest: true }, "");
+        historyArmed = true;
+      } catch (e) {
+        /* Verlauf nicht verfügbar: dann bleibt die Zurück-Taste aussen vor */
+      }
+    }
     render();
   }
 
@@ -513,11 +548,14 @@
       : "";
 
     return "<div>" +
-      '<div class="row" style="justify-content:space-between">' +
+      '<div class="row" style="justify-content:space-between;align-items:center">' +
       '<div class="qmeta">' +
         (view.mode === "wrong" ? "Fehler-Übung · " : "") + esc(label(q)) +
       "</div>" +
+      '<div class="row" style="align-items:center;gap:10px">' +
       '<div class="qmeta">Frage ' + (view.index + 1) + " von " + view.test.length + "</div>" +
+      '<button class="ghost" data-act="home" title="Test beenden und zur Startseite">Beenden</button>' +
+      "</div>" +
       "</div>" +
       '<div class="bar"><i style="width:' +
         Math.round(((view.index + (answered ? 1 : 0)) / view.test.length) * 100) + '%"></i></div>' +
@@ -637,9 +675,15 @@
     } else if (act === "again") {
       beginTest(view.mode);
     } else if (act === "home") {
-      view.phase = "start";
-      render();
+      goHome();
     }
+  });
+
+  // Zurück-Taste (Telefon oder Browser): aus dem Test zur Startseite, statt die
+  // App zu schliessen.
+  window.addEventListener("popstate", function () {
+    historyArmed = false;
+    if (view.phase !== "start") goHome();
   });
 
   document.addEventListener("keydown", function (event) {

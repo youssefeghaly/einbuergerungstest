@@ -361,6 +361,25 @@ function run(window) {
     "Anzeige steht nach dem Zurücksetzen wieder auf 0"
   );
 
+  console.log("\nTest beenden");
+  api.store.reset();
+  api.view.stateCode = "HE";
+  api.view.phase = "start";
+  api.render();
+  q(window, '[data-act="start"]').click();
+  check(api.view.phase === "quiz", "Test läuft");
+  const stopBtn = q(window, '[data-act="home"]');
+  check(!!stopBtn, "Beenden-Knopf ist im Test vorhanden");
+  check(/Beenden/.test(stopBtn.textContent), "Knopf ist mit „Beenden“ beschriftet");
+  stopBtn.click();
+  check(api.view.phase === "start", "Beenden führt zur Startseite");
+  check(!!q(window, "#state"), "Startseite ist wieder da");
+
+  q(window, '[data-act="start"]').click();
+  check(api.view.phase === "quiz", "neuer Test läuft");
+  window.dispatchEvent(new window.Event("popstate"));
+  check(api.view.phase === "start", "Zurück-Taste führt zur Startseite statt aus der App");
+
   console.log("\nKein doppelter Fragetext im selben Test");
   // Mehrere amtliche Fragen haben denselben Wortlaut (z. B. "Welches Land ist
   // ein Nachbarland von Deutschland?" kommt fünfmal vor). Früher konnten zwei

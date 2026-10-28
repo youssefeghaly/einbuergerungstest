@@ -12,10 +12,10 @@ android {
     applicationId 'com.einbuergerungstest.app'
     minSdk 24
     targetSdk 35
-    // 6: jede Frage einmal (nie gesehene zuerst), Fehlerstapel und der rote
-    //    Knopf „Fehler üben“ ab 34 falschen Fragen.
-    versionCode 6
-    versionName '1.5'
+    // 7: „Beenden“ im Test und die Zurück-Taste des Telefons führen zur
+    //    Startseite, statt den Test zu erzwingen oder die App zu schliessen.
+    versionCode 7
+    versionName '1.6'
   }
 
   buildTypes {
