@@ -12,10 +12,10 @@ android {
     applicationId 'com.einbuergerungstest.app'
     minSdk 24
     targetSdk 35
-    // 7: „Beenden“ im Test und die Zurück-Taste des Telefons führen zur
-    //    Startseite, statt den Test zu erzwingen oder die App zu schliessen.
-    versionCode 7
-    versionName '1.6'
+    // 8: „Beenden“ ist rot, die Kopfzeile zeigt nur noch „Frage x von 33“,
+    //    und „Weiter“ bleibt gesperrt, bis eine Antwort gewählt ist.
+    versionCode 8
+    versionName '1.7'
   }
 
   buildTypes {

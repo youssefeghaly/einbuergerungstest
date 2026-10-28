@@ -78,6 +78,7 @@ JSDOM.fromFile(INDEX, {
 function run(window) {
   console.log("Startbildschirm");
   const app = q(window, "#app");
+  const api = window.__EIT__;
   check(!!app, "#app existiert");
   check(/Einbürgerungstest/.test(app.textContent), "Titel wird angezeigt");
   check(!!q(window, "#state"), "Bundesland-Auswahl vorhanden");
@@ -98,12 +99,11 @@ function run(window) {
   let seenIds = new Set();
 
   console.log("\nDurchlauf (" + N + " Fragen)");
+  const testIds = api.view.test.map((x) => x.id);
+  hessen = api.view.test.filter((x) => x.part === "state").length;
   for (let i = 0; i < N; i++) {
-    const meta = q(window, ".qmeta").textContent;
     check(
-      new RegExp("Frage " + (i + 1) + " von " + N).test(
-        qa(window, ".qmeta").map((e) => e.textContent).join(" | ")
-      ),
+      new RegExp("Frage " + (i + 1) + " von " + N).test(q(window, ".qmeta").textContent),
       "Fortschritt zeigt Frage " + (i + 1) + " von " + N
     );
 
@@ -111,22 +111,31 @@ function run(window) {
     check(opts.length === 4, "Frage " + (i + 1) + ": genau 4 Antwortoptionen");
 
     if (q(window, ".qimg")) images++;
-    if (/Hessen/.test(q(window, ".qmeta").textContent)) hessen++;
-    seenIds.add(q(window, ".qmeta").textContent);
 
-    // Mix of right and wrong picks; skip every 11th question entirely.
-    const skip = i % 11 === 10;
-    if (skip) {
-      check(
-        q(window, '[data-act="next"]').textContent.includes("Ohne Antwort"),
-        "Frage " + (i + 1) + ": Knopf bietet Überspringen an"
-      );
-      q(window, '[data-act="next"]').click();
-      continue;
-    }
+    // Ohne Antwort bleibt „Weiter“ gesperrt – Überspringen ist nicht möglich.
+    const nextBtn = q(window, '[data-act="next"]');
+    check(nextBtn.disabled === true, "Frage " + (i + 1) + ": Weiter ist ohne Antwort gesperrt");
+    check(
+      !/Ohne Antwort/.test(nextBtn.textContent),
+      "Frage " + (i + 1) + ": kein „Ohne Antwort weiter“ mehr"
+    );
+    // Auch die Tastatur darf nicht vorspringen.
+    const idxBefore = api.view.index;
+    window.document.dispatchEvent(
+      new window.KeyboardEvent("keydown", { key: "Enter", bubbles: true })
+    );
+    check(
+      api.view.index === idxBefore,
+      "Frage " + (i + 1) + ": Enter springt ohne Antwort nicht weiter"
+    );
 
     const pick = i % 4;
-    opts[pick].click();
+    qa(window, ".opt")[pick].click();
+
+    check(
+      q(window, '[data-act="next"]').disabled === false,
+      "Frage " + (i + 1) + ": Weiter leuchtet nach der Antwort auf"
+    );
 
     const okOpt = qa(window, ".opt.state-ok");
     check(okOpt.length === 1, "Frage " + (i + 1) + ": genau eine richtige Antwort markiert");
@@ -168,7 +177,7 @@ function run(window) {
   const tags = qa(window, ".tag");
   check(tags.length === 33, "Überblicksliste enthält alle 33 Fragen (war " + tags.length + ")");
   const skipped = tags.filter((t) => t.textContent === "nicht beantwortet").length;
-  check(skipped === 3, "3 übersprungene Fragen sind als unbeantwortet markiert (war " + skipped + ")");
+  check(skipped === 0, "keine Frage bleibt unbeantwortet (war " + skipped + ")");
   const okTags = tags.filter((t) => t.textContent === "richtig").length;
   check(
     okTags === expectedScore,
@@ -178,16 +187,15 @@ function run(window) {
   console.log("\nZusammenstellung");
   check(hessen === 3, "genau 3 Fragen zu Hessen (war " + hessen + ")");
   // Bildfragen werden weiter unten gezielt geprüft (die Ziehung ist zufällig).
-  check(seenIds.size === 33, "keine Frage doppelt im Test (eindeutige Labels: " + seenIds.size + ")");
+  check(new Set(testIds).size === 33, "keine Frage doppelt im Test (" + new Set(testIds).size + " eindeutige)");
 
   console.log("\nNeuer Test / Bundesland");
   q(window, '[data-act="home"]').click();
   check(!!q(window, "#state"), "Zurück zum Startbildschirm");
   q(window, "#state").value = "BY";
   q(window, '[data-act="start"]').click();
-  let bayern = 0;
+  const bayern = api.view.test.filter((x) => x.state === "BY").length;
   for (let i = 0; i < 33; i++) {
-    if (/Bayern/.test(q(window, ".qmeta").textContent)) bayern++;
     qa(window, ".opt")[0].click();
     q(window, '[data-act="next"]').click();
   }
@@ -195,7 +203,6 @@ function run(window) {
 
   // ---------------- Lernstand, Fehlerstapel, Auswahl ----------------
   console.log("\nLernstand speichern");
-  const api = window.__EIT__;
   check(!!api, "Testzugang vorhanden");
   check(
     window.localStorage.getItem("eit.progress.v1") !== null,
@@ -314,7 +321,7 @@ function run(window) {
   );
   q(window, '[data-act="start-wrong"]').click();
   check(api.view.mode === "wrong", "Klick startet die Fehler-Übung");
-  check(/Fehler-Übung/.test(q(window, ".qmeta").textContent), "die Frage ist als Fehler-Übung gekennzeichnet");
+  check(!!q(window, ".mode-badge"), "die Frage ist als Fehler-Übung gekennzeichnet");
 
   console.log("\nHinweis auf Wiederholung");
   api.store.reset();
@@ -370,6 +377,12 @@ function run(window) {
   check(api.view.phase === "quiz", "Test läuft");
   const stopBtn = q(window, '[data-act="home"]');
   check(!!stopBtn, "Beenden-Knopf ist im Test vorhanden");
+  check(stopBtn.classList.contains("stop"), "Beenden hat den roten Stil");
+  check(
+    /^Frage 1 von 33$/.test(q(window, ".qmeta").textContent.trim()),
+    "Kopfzeile zeigt nur „Frage 1 von 33“ (war: " + q(window, ".qmeta").textContent.trim() + ")"
+  );
+  check(!/Allgemeine Frage/.test(q(window, "#app").textContent), "keine Fragenbezeichnung mehr im Test");
   check(/Beenden/.test(stopBtn.textContent), "Knopf ist mit „Beenden“ beschriftet");
   stopBtn.click();
   check(api.view.phase === "start", "Beenden führt zur Startseite");

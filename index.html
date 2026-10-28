@@ -60,6 +60,12 @@
     font-weight: 600;
   }
   .primary:hover:not(:disabled) { background: #16417f; border-color: #16417f; }
+  /* „Weiter“ bleibt gesperrt, bis eine Antwort gewählt ist. */
+  .primary:disabled {
+    background: #dfe4ea;
+    border-color: #dfe4ea;
+    color: #9aa4b0;
+  }
   /* Die Fehler-Übung: rot, damit sie nicht mit „Test starten“ verwechselt wird. */
   .danger {
     background: var(--bad);
@@ -74,17 +80,29 @@
     color: #8a6b67;
   }
   .grow { flex: 1 1 45%; }
-  /* „Beenden“ im Test: klein und zurückhaltend, damit es nicht mit
-     „Weiter“ konkurriert. */
-  .ghost {
+  /* „Beenden“ im Test: klein, aber rot, damit es nicht übersehen wird. */
+  .stop {
     padding: 6px 12px;
     font-size: .85rem;
     border-radius: 8px;
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid var(--line);
+    background: var(--bad);
+    border: 1px solid var(--bad);
+    color: #fff;
+    font-weight: 600;
   }
-  .ghost:hover:not(:disabled) { background: #fff; border-color: #b9c2cc; color: var(--ink); }
+  .stop:hover:not(:disabled) { background: #8e1d17; border-color: #8e1d17; }
+  /* Kennzeichnet die Fehler-Übung, solange die Fragenbezeichnung fehlt. */
+  .mode-badge {
+    background: var(--bad-soft);
+    color: var(--bad);
+    border: 1px solid #f0c9c5;
+    border-radius: 99px;
+    padding: 2px 10px;
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
   select {
     font: inherit;
     padding: 11px 12px;
@@ -539,7 +557,9 @@
     }
 
     var last = view.index === view.test.length - 1;
-    var nextLabel = !answered ? "Ohne Antwort weiter" : (last ? "Auswertung anzeigen" : "Weiter");
+    // „Weiter“ bleibt gesperrt, bis eine Antwort gewählt ist – überspringen
+    // ist nicht mehr möglich.
+    var nextLabel = last ? "Auswertung anzeigen" : "Weiter";
 
     // War diese Frage schon einmal falsch? Dann sagt es die Seite vorher.
     var before = store.get(q.id);
@@ -549,12 +569,11 @@
 
     return "<div>" +
       '<div class="row" style="justify-content:space-between;align-items:center">' +
-      '<div class="qmeta">' +
-        (view.mode === "wrong" ? "Fehler-Übung · " : "") + esc(label(q)) +
-      "</div>" +
+      '<div class="qmeta" style="margin:0">Frage ' + (view.index + 1) + " von " +
+        view.test.length + "</div>" +
       '<div class="row" style="align-items:center;gap:10px">' +
-      '<div class="qmeta">Frage ' + (view.index + 1) + " von " + view.test.length + "</div>" +
-      '<button class="ghost" data-act="home" title="Test beenden und zur Startseite">Beenden</button>' +
+      (view.mode === "wrong" ? '<span class="mode-badge">Fehler-Übung</span>' : "") +
+      '<button class="stop" data-act="home" title="Test beenden und zur Startseite">Beenden</button>' +
       "</div>" +
       "</div>" +
       '<div class="bar"><i style="width:' +
@@ -568,7 +587,8 @@
       "</div>" +
       '<div class="row" style="justify-content:space-between">' +
       '<button data-act="back"' + (view.index === 0 ? " disabled" : "") + ">Zurück</button>" +
-      '<button class="primary" data-act="next">' + nextLabel + "</button>" +
+      '<button class="primary" data-act="next"' + (answered ? "" : " disabled") + ">" +
+      nextLabel + "</button>" +
       "</div>" +
       "</div>";
   }
@@ -662,6 +682,7 @@
         render();
       }
     } else if (act === "next") {
+      if (view.answers[view.index] === null) return; // erst antworten
       if (view.index === view.test.length - 1) view.phase = "result";
       else view.index++;
       render();
@@ -698,6 +719,7 @@
         render();
       }
     } else if (k === "Enter" || k === "ArrowRight") {
+      if (view.answers[view.index] === null) return; // erst antworten
       if (view.index === view.test.length - 1) view.phase = "result"; else view.index++;
       render();
     } else if (k === "ArrowLeft") {

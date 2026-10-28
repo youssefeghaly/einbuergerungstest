@@ -23,8 +23,11 @@ https://youssefeghaly.github.io/einbuergerungstest/einbuergerungstest.apk
   jede Formulierung trotzdem nur einmal.
 - **Sofortige Rückmeldung** nach jeder Antwort: richtig/falsch markiert, die
   richtige Antwort wird genannt.
-- **Keine Uhr und kein Bestehen/Durchfallen** – du gehst in deinem Tempo vor,
-  kannst Fragen überspringen und am Ende alles in der Auswertung durchsehen.
+- **Keine Uhr und kein Bestehen/Durchfallen** – du gehst in deinem Tempo vor
+  und siehst am Ende alles in der Auswertung durch.
+- **Antwortpflicht:** „Weiter“ bleibt gesperrt, bis eine Antwort gewählt ist;
+  überspringen geht nicht. Der rote Knopf **Beenden** oben rechts bricht einen
+  Durchlauf jederzeit ab – bereits gegebene Antworten bleiben gespeichert.
 - **Auswertung** am Ende: Punktzahl, Vergleich mit der im echten Test nötigen
   Zahl von 17 richtigen Antworten und eine Liste aller 33 Fragen mit der jeweils
   richtigen Antwort.
